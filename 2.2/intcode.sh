@@ -27,12 +27,11 @@ for (( n=0; n<=99; n++ )); do
         "99")
           if [ "$target" == "${intcode[0]}" ]; then
             echo "noun=$n; verb=$v; output=${intcode[0]}"
-            echo "answer=$(( $n * 100 + $v ))"
+            echo "answer=$(( n * 100 + v ))"
             exit
           fi
           ;;
       esac
     done
-
   done
 done
