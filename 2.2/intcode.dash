@@ -1,0 +1,62 @@
+#!/usr/bin/env dash
+
+target="$2"
+
+n=0
+while [ $n -le 99 ]; do
+
+  v=0
+  while [ $v -le 99 ]; do
+
+    intcode='intcode'
+    while read -r line; do
+      j=0
+      IFS=,
+      for opcode in $line; do
+        eval ${intcode}${j}=$opcode
+        j=$(( j + 1 ))
+      done
+      unset IFS
+    done < $1
+
+    eval ${intcode}1=$n
+    eval ${intcode}2=$v
+
+    i=0
+    while [ $i -lt $j ] ; do
+
+      opcode=$(echo $(eval echo \$$intcode${i}))
+      i=$(( i + 1 ))
+      p1=$(echo $(eval echo \$$intcode${i}))
+      i=$(( i + 1 ))
+      p2=$(echo $(eval echo \$$intcode${i}))
+      i=$(( i + 1 ))
+      p3=$(echo $(eval echo \$$intcode${i}))
+      r1=$(echo $(eval echo \$$intcode${p1}))
+      r2=$(echo $(eval echo \$$intcode${p2}))
+
+      case $opcode in
+        "1")
+          eval ${intcode}${p3}=$(( r1 + r2 ))
+          ;;
+        "2")
+          eval ${intcode}${p3}=$(( r1 * r2 ))
+          ;;
+        "99")
+          output=$intcode0
+          if [ $target -eq $output ]; then
+            echo "noun=$n; verb=$v; output=$output"
+            echo "answer=$(( n * 100 + v ))"
+            exit
+          fi
+          ;;
+      esac
+
+      i=$(( i + 1 ))
+    done
+
+    v=$(( v + 1 ))
+  done
+
+  n=$(( n + 1 ))
+done
