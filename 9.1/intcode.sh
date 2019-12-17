@@ -1,287 +1,194 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-run_program() {
-  amp=$1
-  declare input=( $2 $3)
-  runcode=( ${machine[$amp]} )
-  #echo ${!position[@]} >&2
-  #echo ${position[@]} >&2
-  for (( i=${position[$amp]}; i<=$(( ${#runcode[*]} - 1 )); i++ )); do
-    raw=${runcode[$i]}
-    mask="00000${raw}"
-    instruction=${mask: -5}
-    opcode=${instruction:3:2}
-    mode=${instruction:0:3}
-    case $opcode in
-      01) # add
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        p3=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        runcode[$p3]=$(( r1 + r2 ))
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
+get_r() {
+  _mode=$1
+  for (( _p=1; _p<=${#p[*]}; _p++ )); do
+    _m=${_mode: -1}
+    _mode=${_mode:0: -1}
+    echo ">>: _p:$_p _m:$_m"
+    case $_m in
+      2) # relative mode
+        echo ">>: case 2"
+        echo -n '>>: $(( base + p[$_p] )): '; echo " $base + ${p[${_p}]}: $(( base + p[$_p] ))"
+        echo ">>: before: ${r[$_p]}"
+        r[$_p]=${runcode[$(( base + p[$_p] ))]}
+        echo ">>: after: ${r[$_p]}"
         ;;
-      02) # multiply
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        p3=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        runcode[$p3]=$(( r1 * r2 ))
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
+      1) # immediate mode
+        echo ">>: case 1"
+        echo ">>: before: ${r[$_p]}"
+        r[$_p]=${p[$_p]}
+        echo ">>: after: ${r[$_p]}"
         ;;
-      03) # input
-        p1=${runcode[$(( ++i ))]}
-        runcode[$p1]=${input[@]:0:1}
-        input=( ${input[@]:1} )
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-      04) # output
-        p1=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        output=$r1
-        return
-        ;;
-      05) # jump-if-true
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        [[ $r1 -ne 0 ]] && i=$(( $r2 - 1 )) # ++ in for loop
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-      06) # jump-if-false
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        [[ $r1 -eq 0 ]] && i=$(( $r2 - 1 )) # ++ in for loop
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-      07) # less than
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        p3=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        runcode[$p3]=$(( r1 < r2 ))
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-      08) # equals
-        p1=${runcode[$(( ++i ))]}
-        p2=${runcode[$(( ++i ))]}
-        p3=${runcode[$(( ++i ))]}
-        case ${mode:2:1} in
-          2) # relative mode
-            r1=$(( ${relative[$amp} + $p1 ))
-            ;;
-          1) # immediate mode
-            r1=$p1
-            ;;
-          0) # position mode
-            r1=${runcode[$p1]}
-            ;;
-        esac
-        case ${mode:1:1} in
-          2) # relative mode
-            r2=$(( ${relative[$amp} + $p2 ))
-            ;;
-          1) # immediate mode
-            r2=$p2
-            ;;
-          0) # position mode
-            r2=${runcode[$p2]}
-            ;;
-        esac
-        runcode[$p3]=$(( r1 == r2 ))
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-      09) # adjust relative base
-        p1=${runcode[$(( ++i ))]}
-        runcode[$p1]=${input[@]:0:1}
-        input=( ${input[@]:1} )
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        ;;
-        p1=${runcode[$(( ++i ))]}
-        ;;
-      99) # halt
-        position[$amp]=$i
-        machine[$amp]=${runcode[*]}
-        return 1
+      0) # position mode
+        echo ">>: case 0"
+        echo ">>: before: ${r[$_p]}"
+        r[$_p]=${runcode[${p[$_p]}]}
+        echo ">>: after: ${r[$_p]}"
         ;;
     esac
-    #echo ${!position[@]} >&2
-    #echo ${position[@]} >&2
+  done
+  set_m=$_m
+}
+
+get_p() {
+  _at=$1
+  _count=$2
+  for (( _i=1; _i<=_count; _i++ )); do
+    p[$_i]=${runcode[$(( _i + _at ))]}
   done
 }
 
-IFS=',' read -ra intcode < $1
+IFS=',' read -ra runcode < $1
 
-declare -a combos
-# create all combos
-declare combos=( $( echo {9..5}{9..5}{9..5}{9..5}{9..5} ) )
-# remove combos with dupliated digits
-combos=( ${combos[*]%%*9*9*} )
-combos=( ${combos[*]%%*8*8*} )
-combos=( ${combos[*]%%*7*7*} )
-combos=( ${combos[*]%%*6*6*} )
-combos=( ${combos[*]%%*5*5*} )
-
-declare -A results
-for combo in ${combos[@]}; do 
-  [[ "$combo" =~ ${combo//?/(.)} ]]          # splits into array
-  declare -a signal=( "${BASH_REMATCH[@]:1}" ) # store it
-  output=0
-  s=0
-  declare -A machine position relative
-
-  for amp in {A..E}; do
-    machine[$amp]=${intcode[*]}
-    position[$amp]=0
-    relative[$amp]=0
-  done
-
-  while :; do
-    for amp in {A..E}; do
-      phase=${signal[$s]}
-      unset signal[$s]
-      (( s++ ))
-      run_program $amp $phase $output
-      (( $? != 0 )) && {
-        results[$combo]=$output
-        break 2
-      }
-    done
-  done
+declare -a p r
+base=0
+declare input=( $2 $3)
+for (( i=0; i<=$(( ${#runcode[*]} - 1 )); i++ )); do
+  mask="00000${runcode[$i]}"
+  instruction=${mask: -5}
+  opcode=${instruction:3:2}
+  mode=${instruction:0:3}
+  echo ">>: i:$i opcode:$opcode mode:$mode base:$base"
+  set_m=
+  case $opcode in
+    01) # add
+      get_p $i 3
+      i=$(( i + 3 ))
+      get_r $mode
+      if (( set_m == 2 )); then
+        p[3]=$(( base + p[3] ))
+      fi
+      runcode[${p[3]}]=$(( r[1] + r[2] ))
+      ;;
+    02) # multiply
+      get_p $i 3
+      i=$(( i + 3 ))
+      get_r $mode
+      if (( set_m == 2 )); then
+        p[3]=$(( base + p[3] ))
+      fi
+      runcode[${p[3]}]=$(( r[1] * r[2] ))
+      ;;
+    03) # input
+      get_p $i 1
+      echo ">>: p:${p[@]}"
+      i=$(( i + 1 ))
+      _m=${mode: -1}
+      echo ">>: m:$_m"
+      case $_m in
+        2) # relative mode
+          echo ">>: relative_base: $(( base + p[1] ))"
+          echo ">>: before:${runcode[$(( base + p[1] ))]}"
+          runcode[$(( base + p[1] ))]=${input[@]:0:1}
+          echo ">>: after:${runcode[$(( base + p[1] ))]}"
+          ;;
+        1) # immediate mode
+          p[1]=${input[@]:0:1}
+          echo ">>: m:$_m"
+          echo ">>: before:${p[1]}"
+          echo ">>: ${p[1]}=${input[@]:0:1}"
+          echo ">>: after:${p[1]}"
+          ;;
+        0) # position mode
+          runcode[${p[1]}]=${input[@]:0:1}
+          echo ">>: m:$_m"
+          echo ">>: before:$runcode[${p[1]}]"
+          echo ">>: $runcode[${p[1]}]=${input[@]:0:1}"
+          echo ">>: after:$runcode[${p[1]}]"
+          ;;
+      esac
+      input=( ${input[@]:1} )
+      ;;
+    04) # output
+      get_p $i 1
+      echo ">>: p:${p[@]}"
+      i=$(( i + 1 ))
+      get_r $mode
+      echo -n "${r[1]} "
+      ;;
+    05) # jump-if-true
+      get_p $i 2
+      echo ">>: p:${p[@]}"
+      i=$(( i + 2 ))
+      get_r $mode
+      if (( r[1] != 0 )) ; then
+        i=$(( r[2] - 1 )) # ++ in for loop
+      fi
+      ;;
+    06) # jump-if-false
+      get_p $i 2
+      echo ">>: p:${p[@]}"
+      i=$(( i + 2 ))
+      get_r $mode
+      if (( r[1] == 0 )) ; then
+        i=$(( r[2] - 1 )) # ++ in for loop
+      fi
+      ;;
+    07) # less than
+      get_p $i 3
+      echo ">>: p:${p[@]}"
+      i=$(( i + 3 ))
+      get_r $mode
+      echo ">>: r:${r[@]}"
+      echo ">>: less_than:$(( r[1] < r[2] ))"
+      echo ">>: before:${runcode[${p[3]}]}"
+      echo ">>: set_m:$set_m"
+      if (( set_m == 2 )); then
+        p[3]=$(( base + p[3] ))
+      fi
+      echo ">>: before:${runcode[${p[3]}]}"
+      runcode[${p[3]}]=$(( r[1] < r[2] ))
+      echo ">>: after:${runcode[${p[3]}]}"
+      ;;
+    08) # equals
+      get_p $i 3
+      echo ">>: p:${p[@]}"
+      i=$(( i + 3 ))
+      get_r $mode
+      echo ">>: r:${r[@]}"
+      echo ">>: set_m:$set_m"
+      if (( set_m == 2 )); then
+        p[3]=$(( base + p[3] ))
+      fi
+      echo ">>: before:${runcode[${p[3]}]}"
+      runcode[${p[3]}]=$(( r[1] == r[2] ))
+      echo ">>: after:${runcode[${p[3]}]}"
+      ;;
+    09) # adjust relative base
+      get_p $i 1
+      echo ">>: p:${p[@]}"
+      i=$(( i + 1 ))
+      get_r $mode
+      _m=${mode: -1}
+      echo ">>: m:$_m"
+      case $_m in
+        2) # relative mode
+          echo ">>: r:${r[@]}"
+          echo ">>: before:$base"
+          base=$(( base + r[1] ))
+          #base=${r[1]}
+          echo ">>: after:$base"
+          ;;
+        1) # immediate mode
+          echo ">>: r:${r[@]}"
+          echo ">>: before:$base"
+          base=$(( base + r[1] ))
+          echo ">>: after:$base"
+          ;;
+        0) # position mode
+          echo ">>: r:${r[@]}"
+          echo ">>: before:$base"
+          base=$(( base + r[1] ))
+          echo ">>: after:$base"
+          ;;
+      esac
+      ;;
+    99) # halt
+      echo ""
+      exit
+      ;;
+  esac
+  unset p r set_m
 done
 
-max_value=0
-max_key=0
-for i in "${!results[@]}"; do
-  if [ ${results[$i]} -gt $max_value ]; then
-    max_key=$i
-    max_value=${results[$i]}
-  fi
-done
-printf "%s:%d\n" $max_key $max_value
