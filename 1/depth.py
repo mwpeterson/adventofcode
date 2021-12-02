@@ -14,7 +14,7 @@ def count_increase(lst, window):
         a = sum(lst[i:i+window])
         b = sum(lst[i+1:i+1+window])
         if a < b:
-             count += 1
+            count += 1
     return count
 
 
