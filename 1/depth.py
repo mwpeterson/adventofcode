@@ -1,8 +1,6 @@
-
-def read_input(filename):
-    with open(filename) as f:
-        data = f.read().splitlines()
-    return list(map(int, data))
+import sys
+sys.path.append("..")
+import aoc
 
 
 def count_increase(lst, window):
@@ -22,7 +20,7 @@ def main():
     """
     Read input from file and count the number of times the list is increasing.
     """
-    data = read_input("input.txt")
+    data = aoc.read_input("input.txt", int)
     print(count_increase(data, 1))
     print(count_increase(data, 3))
 
