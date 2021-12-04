@@ -36,9 +36,6 @@ def aim(lst):
     return h*v
 
 def main():
-    """
-    Read input from file and count the number of times the list is increasing.
-    """
     data = read_input("input.txt", str)
     print(dive(data))
     print(aim(data))
