@@ -2,25 +2,26 @@ import numpy as np
 from timeit import default_timer as timer
 from datetime import timedelta
 
+checked = set()
 
 def count(neighbors):
-    n = 1
-    while len(neighbors) > 0:
-        (x,y) = neighbors.pop(0)
-        if floor[x,y] != 9:
-            if (x,y) not in seen: n = n + 1
-            seen.add((x,y))
-            lx = x-1 if x>0 else x
-            rx = x+1 if x<max_x-1 else x
-            uy = y-1 if y>0 else y
-            dy = y+1 if y<max_y-1 else y
-            if (lx,y) not in seen: neighbors.append((lx,y)) 
-            if (rx,y) not in seen: neighbors.append((rx,y))
-            if (x,uy) not in seen: neighbors.append((x,uy))
-            if (x,dy) not in seen: neighbors.append((x,dy))
-        else:
-            seen.add((x,y))
-    return(n)
+    seen = set()
+    while True:
+        try:
+            (x,y) = neighbors.pop()
+            checked.add((x,y))
+            if floor[x,y] != 9:
+                seen.add((x,y))
+                e = x-1 if x>0 else x
+                w = x+1 if x<max_x-1 else x
+                n = y-1 if y>0 else y
+                s = y+1 if y<max_y-1 else y
+                if (e,y) not in checked: neighbors.append((e,y)) 
+                if (w,y) not in checked: neighbors.append((w,y))
+                if (x,n) not in checked: neighbors.append((x,n))
+                if (x,s) not in checked: neighbors.append((x,s))
+        except IndexError:
+            return(len(seen))
 
 
 start = timer()
@@ -29,20 +30,24 @@ floor = np.genfromtxt('input', delimiter=1, dtype=int)
 load = timer()
 
 (max_x, max_y) = floor.shape
-lowest = []
-seen = set()
 basin = {}
 
-for n in range(0,9):
-    coord = np.transpose(np.nonzero(floor==n))
+for i in range(0,9):
+    coord = np.transpose(np.nonzero(floor==i))
 
     for (x,y) in coord:
-        row = floor[x-1 if x>0 else x:x+2,y]
-        col = floor[x, y-1 if y>0 else y:y+2]
-        if np.min(row) == n and np.min(col) == n and len(row[row==n]) == 1 and len(col[col==n]) == 1:
-            seen.add((x,y))
-            basin[(x,y)] = 0
-            lowest.append(n)
+        e = x-1 if x>0 else x
+        w = x+1 if x<max_x-1 else x
+        n = y-1 if y>0 else y
+        s = y+1 if y<max_y-1 else y
+        neighbors = {(e,y),(w,y),(x,n),(x,s)}
+        neighbors.discard((x,y))
+        for p in list(neighbors):
+            if i < floor[p]: neighbors.discard(p)
+        if len(neighbors) == 0:
+            basin[(x,y)] = i
+
+print(np.sum(list(basin.values()))+len(basin))
 
 lap = timer()
 
