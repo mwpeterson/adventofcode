@@ -6,6 +6,10 @@ from datetime import timedelta
 def check_syntax(nav):
     score = 0
     auto = []
+    opener = set(['(', '[', '{', '<'])
+    closer = set([')', ']', '}', '>'])
+    match = {'(': ')', '[': ']', '{': '}', '<': '>'}
+    scoring = {'(': 1, '[': 2, '{': 3, '<': 4, ')': 3, ']': 57, '}': 1197, '>': 25137}
     while True:
         try:
             line = nav.pop()
@@ -14,53 +18,21 @@ def check_syntax(nav):
             while True:
                 try:
                     c = line.popleft()
-                    if c == '(':
+                    if c in opener:
                         syntax.append(c)
-                    elif c == ')':
+                    elif c in closer:
                         d = syntax.pop()
-                        if d != '(':
-                            raise ValueError(c)
-                    elif c == '[':
-                        syntax.append(c)
-                    elif c == ']':
-                        d = syntax.pop()
-                        if d != '[':
-                            raise ValueError(c)
-                    elif c == '{':
-                        syntax.append(c)
-                    elif c == '}':
-                        d = syntax.pop()
-                        if d != '{':
-                            raise ValueError(c)
-                    elif c == '<':
-                        syntax.append(c)
-                    elif c == '>':
-                        d = syntax.pop()
-                        if d != '<':
+                        if c != match[d]:
                             raise ValueError(c)
                 except ValueError as e:
-                    if e.args[0] == ')':
-                        score = score + 3
-                    elif e.args[0] == ']':
-                        score = score + 57
-                    elif e.args[0] == '}':
-                        score = score + 1197
-                    elif e.args[0] == '>':
-                        score = score + 25137
+                    score = score + scoring[e.args[0]]
                     break
                 except IndexError:
                     complete = 0
                     while True:
                         try:
                             m = syntax.pop()
-                            if m == '(':
-                                complete = 5*complete + 1
-                            elif m == '[':
-                                complete = 5*complete + 2
-                            elif m == '{':
-                                complete = 5*complete + 3
-                            elif m == '<':
-                                complete = 5*complete + 4
+                            complete = 5*complete + scoring[m]
                         except IndexError:
                             auto.append(complete)
                             break
@@ -81,9 +53,9 @@ def main():
     print(check_syntax(nav))
     end = timer()
 
-    print("load: {} ms".format(timedelta(seconds=load - start).total_seconds() *1000))
-    print("calculate: {} ms".format(timedelta(seconds=end - load).total_seconds() * 1000))
-    print("overall: {} ms".format(timedelta(seconds=end - start).total_seconds() *1000))
+    print("load: {} µs".format(timedelta(seconds=load - start).total_seconds() *1000*1000))
+    print("calculate: {} µs".format(timedelta(seconds=end - load).total_seconds() * 1000*1000))
+    print("overall: {} µs".format(timedelta(seconds=end - start).total_seconds() *1000*1000))
 
 
 if __name__ == '__main__':
