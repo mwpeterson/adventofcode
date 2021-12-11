@@ -5,26 +5,27 @@ from datetime import timedelta
 
 def count_flash(data):
     flash = np.transpose(np.nonzero(data > 9))
-    if flash.size == 0: return 0
+    n = len(flash)
+    if n == 0: return 0
     data[data > 9] = 0
     for (x,y) in flash:
         grid = data[x-1 if x>0 else x:x+2, y-1 if y>0 else y:y+2]
         grid[(grid < 10)&(grid > 0)] += 1
-    return flash.size+count_flash(data)
+    return n+count_flash(data)
 
 
 def count_100(data):
     flashes = 0
     for _ in range(0,100):
         data[data < 10] += 1
-        flashes = flashes + count_flash(data)//2 # why???
+        flashes = flashes + count_flash(data)
     return flashes
 
 def count_all(data):
     flash = 0; i = 0
     while flash < 100:
         data[data < 10] += 1
-        flash = count_flash(data)//2 # why???
+        flash = count_flash(data)
         i = i +1
     return 100+i
 
