@@ -9,7 +9,7 @@ def visit1(v, walk, walks, paths):
             while v != walk[-1]:
                 walk.pop()
             walk.append(e)
-            walks.append(walk.copy())
+            walks = walks + 1
             walk.pop()
             continue
         elif e.islower() and e in walk:
@@ -28,7 +28,7 @@ def visit2(v, walk, walks, paths, small):
             while v != walk[-1]:
                 walk.pop()
             walk.append(e)
-            walks.append(walk.copy())
+            walks = walks + 1
             walk.pop()
             continue
         elif e == 'start':
@@ -71,21 +71,21 @@ with open('input') as f:
 
 t_load = timer()
 
-walks = []
+walks = 0
 walk = []
 v = 'start'
 walk.append(v)
 visit1(v, walk, walks, paths)
-print(len(walks))
+print(walks)
 
 t_lap = timer()
 
-walks = []
+walks = 0
 walk = []
 v = 'start'
 walk.append(v)
 visit2(v, walk, walks, paths, small)
-print(len(walks))
+print(walks)
 
 t_end = timer()
 
