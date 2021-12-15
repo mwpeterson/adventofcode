@@ -1,4 +1,7 @@
 import numpy as np
+from timeit import default_timer as timer
+from datetime import timedelta
+
 
 def fold_it(paper, folds):
     for f in folds:
@@ -15,14 +18,17 @@ def fold_it(paper, folds):
         paper = np.unique(np.vstack((keep, abs(2*fold - flip))), axis=0)
     return paper
 
+t_start = timer()
 filename = 'input'
 with open(filename, 'r') as f:
     input = list(f)
 paper = np.array([[int(p) for p in c] for c in (i.split(',') for i in input if ',' in i)])
 folds = [i.split()[2] for i in input if '=' in i]
+t_load = timer()
 
 paper = fold_it(paper, [folds.pop(0)])
 print(len(paper))
+t_one = timer()
 
 paper = fold_it(paper, folds)
 grid = np.full((max(paper[:,1])+1, max(paper[:,0])+1), ' ')
@@ -35,3 +41,9 @@ for j in range(4,grid.shape[1]+1, (grid.shape[1]+1)//8):
         print(''.join(g))
     print('')
     i = j+1
+t_end = timer()
+
+print("load: {} µs".format(round(timedelta(seconds=t_load - t_start).total_seconds() *1000*1000, 2)))
+print("part1: {} µs".format(round(timedelta(seconds=t_one - t_load).total_seconds() *1000*1000, 2)))
+print("part2: {} µs".format(round(timedelta(seconds=t_end - t_one).total_seconds() *1000*1000, 2)))
+print("total: {} µs".format(round(timedelta(seconds=t_end - t_start).total_seconds() *1000*1000, 2)))
