@@ -12,41 +12,24 @@ def neighbors(pos, end):
     e = (x,y+1 if y<end[1] else y)
     return (n,s,w,e)
 
-def shortest_path(prev, data):
-    S = []
-    u = end
-    while u:
-        S.append(u)
-        u = prev[u]
-
-    distance = 0
-    for s in S:
-        distance += data[s]
-    return distance
-
 def find_path(start, end, data):
-    seen = np.zeros(data.shape, dtype=bool)
-    dist = np.full(data.shape, np.inf, dtype=float)
+    seen = {}
+    Q = []
 
-    Q = [start]
-    dist[start] = 0
+    heappush(Q, (0, start))
 
     while Q:
-        u = heappop(Q)
-        if seen[u]:
+        (d, u) = heappop(Q)
+        if u in seen:
             continue
+        if u == end:
+            return d
         seen[u] = True
-        for neighbor in set(c for c in neighbors(u, end) if not seen[c]):
-            risk = data[neighbor]
-            alt = dist[u] + risk
-            if alt < dist[neighbor]:
-                dist[neighbor] = alt
-                heappush(Q, neighbor)
-
-    return int(dist[end])
-
-    #return shortest_path(prev, data) - data[start]
-
+        for v in set(c for c in neighbors(u, end) if c not in seen):
+            risk = data[v]
+            heappush(Q, (d + risk, v))
+    else:
+        return np.inf
 data = np.genfromtxt('input', delimiter=1, dtype=int)
 
 t_start = timer()
@@ -71,14 +54,16 @@ for _ in range(0,4):
     new += 1
     new[new == 10] = 1
     large = np.vstack((large, new.copy()))
-
 end = tuple(np.subtract(large.shape, (1,1)))
+
+t_expand = timer()
 
 print(find_path(start, end, large))
 
 t_end = timer()
 
 print("load: {} ms".format(round(timedelta(seconds=t_load - t_start).total_seconds()*1000, 2)))
-print("part1: {} s".format(round(timedelta(seconds=t_one - t_load).total_seconds(), 2)))
-print("part2: {} s".format(round(timedelta(seconds=t_end - t_load).total_seconds(), 2)))
-print("overall: {} s".format(round(timedelta(seconds=t_end - t_start).total_seconds(), 2)))
+print("part1: {} ms".format(round(timedelta(seconds=t_one - t_load).total_seconds()*1000, 2)))
+print("expand map: {} ms".format(round(timedelta(seconds=t_expand - t_one).total_seconds()*1000, 2)))
+print("part2: {} ms".format(round(timedelta(seconds=t_end - t_expand).total_seconds()*1000, 2)))
+print("overall: {} ms".format(round(timedelta(seconds=t_end - t_start).total_seconds()*1000, 2)))
