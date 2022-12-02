@@ -10,26 +10,26 @@ three=0
 echo "" >> $file
 while read -r line; do
     if [[ "$line" == "" ]]; then
-	if (($cal > $most)); then
+	if ((cal > most)); then
 	    most=$cal
 	fi
-	if (($cal > $one)); then
+	if ((cal > one)); then
 	    three=$two
 	    two=$one
 	    one=$cal
-	elif (($cal > $two)); then
+	elif ((cal > two)); then
 	    three=$two
 	    two=$cal
-	elif (($cal > $three)); then
+	elif ((cal > three)); then
 	    three=$cal
 	fi
 	cal=0
     else
-	cal=$(($cal + $line))
+	cal=$((cal + line))
     fi
 done <$file 
 echo "most: $most"
 echo "one: $one"
 echo "two: $two"
 echo "three: $three"
-echo "top: $(($one + $two + $three))"
+echo "top: $((one + two + three))"
